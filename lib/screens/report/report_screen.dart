@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:screenshot/screenshot.dart';
 import '../../config/theme.dart';
 import '../../providers/habit_provider.dart';
 import '../../providers/stats_provider.dart';
@@ -10,18 +9,11 @@ import 'widgets/dot_matrix.dart';
 import 'widgets/stats_summary.dart';
 import 'widgets/share_card.dart';
 
-class ReportScreen extends ConsumerStatefulWidget {
+class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
 
   @override
-  ConsumerState<ReportScreen> createState() => _ReportScreenState();
-}
-
-class _ReportScreenState extends ConsumerState<ReportScreen> {
-  final _screenshotController = ScreenshotController();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(reportPeriodProvider);
     final habits = ref.watch(habitsProvider);
     final db = ref.watch(databaseServiceProvider);
@@ -47,9 +39,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         break;
     }
 
-    // Calculate overall stats for the period
-    int totalCompleted = 0;
-    int totalScheduled = 0;
     int overallBestStreak = 0;
     int overallTotalDone = 0;
     int overallBestDay = 1;
@@ -113,12 +102,10 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           // Report content
           Expanded(
             child: ShareReportCard(
-              screenshotController: _screenshotController,
               child: ListView(
                 shrinkWrap: true,
                 physics: const ClampingScrollPhysics(),
                 children: [
-                  // Title with date range
                   Center(
                     child: Text(
                       '${AppDateUtils.formatRelative(startDate)} - ${AppDateUtils.formatRelative(endDate)}',
@@ -130,7 +117,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   ),
                   const SizedBox(height: 4),
 
-                  // Day of week headers (for weekly view)
                   if (period == ReportPeriod.weekly) ...[
                     Padding(
                       padding: const EdgeInsets.only(left: 100),
@@ -151,7 +137,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                     const SizedBox(height: 8),
                   ],
 
-                  // Dot matrix per habit
                   ...habits.map((habit) {
                     final records = db.getRecordsInRange(
                       habit.id,
@@ -170,7 +155,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   const Divider(),
                   const SizedBox(height: 8),
 
-                  // Summary stats
                   StatsSummaryRow(
                     metPercentage: avgRate,
                     bestDay: overallBestDay,
@@ -182,7 +166,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
           ),
 
-          // Banner ad
           const BannerAdWidget(),
         ],
       ),

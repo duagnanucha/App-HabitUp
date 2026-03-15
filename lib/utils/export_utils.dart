@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/habit.dart';
 import '../models/habit_record.dart';
 import '../services/database_service.dart';
@@ -8,8 +7,8 @@ import '../services/database_service.dart';
 class ExportUtils {
   static final DatabaseService _db = DatabaseService();
 
-  /// Export all habits and records to JSON
-  static Future<File> exportToJson() async {
+  /// Export all habits and records to JSON string
+  static String exportToJsonString() {
     final habits = _db.getAllHabits(includeArchived: true);
     final allRecords = <HabitRecord>[];
 
@@ -24,12 +23,7 @@ class ExportUtils {
       'records': allRecords.map((r) => _recordToJson(r)).toList(),
     };
 
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File(
-      '${directory.path}/habitup_backup_${DateTime.now().millisecondsSinceEpoch}.json',
-    );
-    await file.writeAsString(jsonEncode(data));
-    return file;
+    return jsonEncode(data);
   }
 
   static Map<String, dynamic> _habitToJson(Habit h) {
