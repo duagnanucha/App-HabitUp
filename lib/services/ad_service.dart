@@ -1,104 +1,41 @@
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../config/admob_config.dart';
 
+// Conditional imports: google_mobile_ads only on mobile
+import 'ad_service_mobile.dart' if (dart.library.html) 'ad_service_stub.dart'
+    as platform;
+
 class AdService {
-  InterstitialAd? _interstitialAd;
+  final platform.AdServicePlatform _platform;
   int _actionCount = 0;
 
-  /// Initialize Mobile Ads SDK
+  AdService() : _platform = platform.AdServicePlatform();
+
   static Future<void> initialize() async {
-    await MobileAds.instance.initialize();
+    if (kIsWeb) return;
+    await platform.AdServicePlatform.initialize();
   }
-
-  // ── Banner Ad ────────────────────────────────────────────
-
-  BannerAd createBannerAd({
-    AdSize size = AdSize.banner,
-    Function? onLoaded,
-    Function? onFailed,
-  }) {
-    return BannerAd(
-      adUnitId: AdMobConfig.bannerAdUnitId,
-      size: size,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (ad) => onLoaded?.call(),
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          onFailed?.call();
-        },
-      ),
-    );
-  }
-
-  // ── Interstitial Ad ─────────────────────────────────────
 
   void loadInterstitialAd() {
-    InterstitialAd.load(
-      adUnitId: AdMobConfig.interstitialAdUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitialAd = ad;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _interstitialAd = null;
-              loadInterstitialAd(); // Pre-load next
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _interstitialAd = null;
-              loadInterstitialAd();
-            },
-          );
-        },
-        onAdFailedToLoad: (_) {
-          _interstitialAd = null;
-        },
-      ),
-    );
+    if (kIsWeb) return;
+    _platform.loadInterstitialAd();
   }
 
-  /// Track actions and show interstitial at configured frequency
   void trackAction() {
+    if (kIsWeb) return;
     _actionCount++;
     if (_actionCount >= AdMobConfig.interstitialFrequency) {
-      showInterstitialAd();
+      _platform.showInterstitialAd();
       _actionCount = 0;
     }
   }
 
   void showInterstitialAd() {
-    if (_interstitialAd != null) {
-      _interstitialAd!.show();
-    }
-  }
-
-  // ── Rewarded Ad ─────────────────────────────────────────
-
-  void loadAndShowRewardedAd({
-    required Function(RewardItem reward) onRewarded,
-    Function? onFailed,
-  }) {
-    RewardedAd.load(
-      adUnitId: AdMobConfig.rewardedAdUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) => ad.dispose(),
-          );
-          ad.show(
-            onUserEarnedReward: (_, reward) => onRewarded(reward),
-          );
-        },
-        onAdFailedToLoad: (_) => onFailed?.call(),
-      ),
-    );
+    if (kIsWeb) return;
+    _platform.showInterstitialAd();
   }
 
   void dispose() {
-    _interstitialAd?.dispose();
+    _platform.dispose();
   }
 }
